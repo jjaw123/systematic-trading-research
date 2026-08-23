@@ -1,0 +1,93 @@
+idea,name,n,asset,tpy,ret,sharpe,dd,bh,verdict
+IDEA-001,Golden Cross 50/200,3,QQQ,1.2,+387%,0.75,-28%,+543%/-37%,FAIL
+IDEA-002,200-day SMA filter,4,SPY,5.8,+145%,0.59,-24%,+334%/-32%,FAIL
+IDEA-003,12-mo TS momentum,2,SPY,0.7,+214%,0.61,-32%,+334%/-32%,FAIL
+IDEA-004,XS momentum 12-1 top decile,1,9 SPDR sectors,3.9,+436%,0.65,-31%,+343%/-35%,PASS
+IDEA-005,Dual momentum (Antonacci),1,SPY/EFA/AGG,1.5,+127%,0.44,-32%,+126%/-24%,FAIL
+IDEA-006,MACD trend 12/26/9,2,SPY,20.7,+111%,0.55,-16%,+334%/-32%,FAIL
+IDEA-007,Parabolic SAR,1,GLD,20.4,+34%,0.19,-40%,+54%/-45%,FAIL
+IDEA-008,Triple EMA 4/9/18,2,SPY,20.6,+68%,0.41,-16%,+334%/-32%,FAIL
+IDEA-009,52wk-high momentum rotation,1,9 SPDR sectors,9.1,+159%,0.56,-32%,+343%/-35%,FAIL
+IDEA-010,ADX/DMI system,1,GLD,2.9,+5%,-0.06,-9%,+54%/-45%,FAIL
+IDEA-011,RSI(2) reversion (Connors),2,SPY,15.6,+53%,0.43,-14%,+334%/-32%,FAIL
+IDEA-012,Bollinger reversion,1,SPY,9.2,+99%,0.48,-27%,+334%/-32%,FAIL
+IDEA-014,IBS reversion,2,SPY,70.2,+71% (2x +43% / 3x +19%),0.43,-20%,+334%/-32%,FAIL
+IDEA-015,Williams %R bounce,1,SPY,11.6,+76%,0.42,-24%,+334%/-32%,FAIL
+IDEA-016,MA envelope fade (short),1,SPY,1.4,+1%,-0.11,-9%,+334%/-32%,FAIL
+IDEA-018,Stochastic reversion,1,SPY,11.8,+118%,0.51,-26%,+334%/-32%,FAIL
+IDEA-019,Pairs z-score reversion,2,XLE/XLB,7.5,-17%,-0.20,-32%,+183%/-52%,FAIL
+IDEA-020,Donchian 20/10 (Turtle 1),2,SPY,8.4,+169%,0.81,-8%,+334%/-32%,FAIL
+IDEA-021,Donchian 55/20 (Turtle 2),2,SPY,5.5,+44%,0.30,-17%,+334%/-32%,FAIL
+IDEA-022,52wk-high breakout,2,AAPL,3.9,+334%,0.75,-30%,+1875%/-44%,FAIL
+IDEA-023,ATR volatility breakout,1,GLD,9.2,-49%,-0.30,-73%,+54%/-45%,FAIL
+IDEA-024,Bollinger squeeze breakout,1,GLD,1.4,+7%,-0.02,-10%,+54%/-45%,FAIL
+IDEA-026,Volume-confirmed breakout,2,AAPL,4.3,+53%,0.27,-34%,+1875%/-44%,FAIL
+IDEA-028,Sell in May,1,SPY,2.0,+163%,0.64,-32%,+334%/-32%,FAIL
+IDEA-029,Turn-of-month,2,SPY,24.0,+54%,0.40,-15%,+334%/-32%,FAIL
+IDEA-030,Santa Claus rally,1,SPY,2.0,+14%,0.19,-7%,+334%/-32%,FAIL
+IDEA-031,Gold seasonal Sep-Feb,1,GLD,2.0,+5%,0.03,-29%,+54%/-45%,FAIL
+IDEA-032,Pre-holiday effect,1,SPY,18.1,+15%,0.16,-8%,+334%/-32%,FAIL
+IDEA-033,Window dressing (sectors),1,9 SPDR sectors,10.1,+11%,0.06,-19%,+343%/-35%,FAIL
+IDEA-034,Month-of-year seasonality (walk-fwd),1,SPY,3.6,+139%,0.63,-30%,+334%/-32%,FAIL
+IDEA-035+IDEA-041,Fixed-frac 1% w/ 2N stop,1,GLD (Donchian 20/10),90.5,+22% (2x +20% / 3x +19%),0.24,-9%,+54%/-45%,FAIL
+IDEA-036,ATR 'N' sizing,1,GLD (Donchian 20/10),102.0,+32% (2x +31% / 3x +29%),0.37,-11%,+54%/-45%,FAIL
+IDEA-037,Half-Kelly sizing,1,GLD (Donchian 20/10),7.9,+16%,0.17,-9%,+54%/-45%,FAIL
+IDEA-038,Vol targeting 10%,1,SPY,51.2,+185%,0.69,-16%,+334%/-32%,FAIL
+IDEA-039,1/N rebalancing,1,SPY/GLD/XLE/XLK/XLV,0.0,+295%,0.75,-30%,+295%/-30%,PASS
+IDEA-040,Pyramiding (Turtle adds),1,GLD (Donchian 20/10),16.6,+41%,0.29,-15%,+54%/-45%,FAIL
+IDEA-042,Position/correlation caps,1,GLD/SPY/QQQ Donchian book,22.2,+77%,0.71,-8%,+282%/-24%,FAIL
+IDEA-044,Portfolio heat cap 6%,1,GLD/SPY/QQQ Donchian book,22.8,+107%,0.71,-10%,+282%/-24%,FAIL
+IDEA-045,Dual SMA 10/30,2,SPY,8.1,+83%,0.42,-17%,+334%/-32%,FAIL
+IDEA-046,Triple SMA 5/20/50,1,SPY,12.1,+51%,0.34,-23%,+334%/-32%,FAIL
+IDEA-047,Absolute momentum vs T-bill,1,SPY (SHY cash),1.2,+112%,0.42,-38%,+334%/-32%,FAIL
+IDEA-048,Dual momentum 4-asset,1,SPY/EFA/GLD/IEF (SHY cash),3.2,+23%,0.14,-26%,+118%/-20%,FAIL
+IDEA-049,Ivy 5 tactical allocation,1,SPY/VEU/AGG/VNQ/GLD,6.5,+67%,0.50,-10%,+132%/-24%,FAIL
+IDEA-050,ADX-gated Golden Cross,1,SPY,6.8,+34%,0.22,-26%,+334%/-32%,FAIL
+IDEA-051,Keltner breakout,1,GLD,7.2,+22%,0.16,-19%,+54%/-45%,FAIL
+IDEA-052,Aroon 25 trend,1,GLD,8.9,+9%,0.06,-38%,+54%/-45%,FAIL
+IDEA-053,ROC 125-day filter,1,SPY,6.5,+161%,0.63,-23%,+334%/-32%,FAIL
+IDEA-054,10-month SMA timing,2,SPY,1.7,+118%,0.47,-22%,+334%/-32%,FAIL
+IDEA-055,Weekly GC 10/40wk,1,SPY,1.0,+141%,0.53,-32%,+334%/-32%,FAIL
+IDEA-056,EMA crossover 12/26,1,GLD,8.6,+33%,0.20,-37%,+54%/-45%,FAIL
+IDEA-057,Elder triple screen,1,SPY,10.9,+59%,0.53,-11%,+334%/-32%,FAIL
+IDEA-058,Chandelier exit + Donchian entry,1,GLD,7.6,+37%,0.24,-19%,+54%/-45%,FAIL
+IDEA-059,SuperTrend 10/3,1,GLD,9.0,+32%,0.19,-20%,+54%/-45%,FAIL
+IDEA-060,LinReg slope 50d,1,SPY,4.5,+108%,0.48,-26%,+334%/-32%,FAIL
+IDEA-061,Donchian 4-week rule L/S,1,GLD,6.2,-33%,-0.16,-47%,+54%/-45%,FAIL
+IDEA-062,ATR trailing stop on GC,1,SPY,0.9,+21%,0.33,-6%,+334%/-32%,FAIL
+IDEA-063,MA ribbon 10-50,1,GLD,6.7,+31%,0.22,-20%,+54%/-45%,FAIL
+IDEA-064,Ride upper Bollinger,1,GLD,15.7,+14%,0.11,-9%,+54%/-45%,FAIL
+IDEA-065,"52wk-high momentum, 10% trail",2,SPY,1.5,+170%,0.65,-18%,+334%/-32%,FAIL
+IDEA-066,Sector rotation top-3 (6m),1,9 SPDR sectors,8.0,+383%,0.77,-29%,+343%/-35%,PASS
+IDEA-067,Vol-adjusted trend (Sharpe>0.3),1,SPY,1.9,+68%,0.31,-39%,+334%/-32%,FAIL
+IDEA-068,Double 7's,1,SPY,20.5,+97%,0.52,-15%,+334%/-32%,FAIL
+IDEA-069,TPS PercentRank,1,SPY,1.1,+31%,0.27,-20%,+334%/-32%,FAIL
+IDEA-070,Williams %R gated,1,SPY,6.9,+87%,0.52,-29%,+334%/-32%,FAIL
+IDEA-071,Stochastic gated,1,SPY,5.7,+85%,0.52,-26%,+334%/-32%,FAIL
+IDEA-072,RSI(4) reversion variant,2,SPY,1.8,+20%,0.25,-8%,+334%/-32%,FAIL
+IDEA-073,Pct-below-MA reversion,1,SPY,0.8,+4%,-0.01,-27%,+334%/-32%,FAIL
+IDEA-074,ADX-low gated RSI(2),1,SPY,8.3,+11%,0.06,-15%,+334%/-32%,FAIL
+IDEA-075,3 consecutive down days,1,SPY,16.0,+45%,0.30,-31%,+334%/-32%,FAIL
+IDEA-076,52-week low bounce,2,MSFT,0.8,+25%,0.37,-4%,+916%/-36%,FAIL
+IDEA-077,Keltner fade (ADX<20),1,SPY,3.5,+36%,0.31,-10%,+334%/-32%,FAIL
+IDEA-078,Donchian fade (ADX<20),1,SPY,16.6,-40%,-0.37,-44%,+334%/-32%,FAIL
+IDEA-079,VIX spike reversion,1,SPY (VIX signal),9.7,+3%,0.00,-32%,+334%/-32%,FAIL
+IDEA-080,Williams vol breakout (daily),1,GLD,10.3,+16%,0.29,-3%,+54%/-45%,FAIL
+IDEA-081,ATR channel + chandelier,1,GLD,5.0,+16%,0.12,-14%,+54%/-45%,FAIL
+IDEA-082,Range-compression breakout,1,GLD,2.1,-7%,-0.21,-25%,+54%/-45%,FAIL
+IDEA-083,Flag/pennant breakout,1,GLD,0.0,+8%,0.00,-0%,+54%/-45%,FAIL
+IDEA-084,OBV-confirmed breakout,2,AAPL,7.2,+648%,0.94,-33%,+1875%/-44%,FAIL
+IDEA-085,Swing-high breakout (3%),1,GLD,0.0,+8%,0.00,-0%,+54%/-45%,FAIL
+IDEA-086,Gold multi-month base breakout,1,GLD,1.9,+8%,0.05,-34%,+54%/-45%,FAIL
+IDEA-087,Prior-year-high breakout,1,SPY,0.5,+157%,0.50,-37%,+334%/-32%,FAIL
+IDEA-088,NR7 breakout (adapted),1,GLD,30.0,+24%,0.15,-21%,+54%/-45%,FAIL
+IDEA-089,Ross hook pullback breakout,1,GLD,9.4,+8%,0.05,-29%,+54%/-45%,FAIL
+IDEA-090,Gold seasonal Aug25-Oct31,1,GLD,2.0,-12%,-0.20,-29%,+54%/-45%,FAIL
+IDEA-091,Triple-witching drift,1,SPY,8.0,-4%,-0.27,-11%,+334%/-32%,FAIL
+IDEA-093,Risk parity SPY/GLD/IEF,1,SPY/GLD/IEF,12.0,+94%,0.78,-17%,+128%/-17%,FAIL
+IDEA-094,CPPI floor 90 / mult 3,1,SPY,0.0,+334%,0.72,-32%,+334%/-32%,PASS
+IDEA-095,Drawdown de-risking,1,GLD (Donchian 20/10),8.2,+27%,0.20,-17%,+54%/-45%,FAIL
+IDEA-096,VIX-scaled exposure,1,SPY (VIX signal),19.6,+236%,0.70,-24%,+334%/-32%,FAIL
+IDEA-097,Barbell 90/10,1,BIL + GLD sleeve,7.9,+10%,0.11,-2%,+33%/-25%,FAIL
+IDEA-098,Rebalancing bands 60/40,1,SPY/GLD,252.0,+208% (2x +207% / 3x +206%),0.73,-22%,+180%/-20%,FAIL
+IDEA-102,"Sector rotation top-3, inv-vol wts",1,9 SPDR sectors,12.0,+345%,0.75,-29%,+343%/-35%,PASS

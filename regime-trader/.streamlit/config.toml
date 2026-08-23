@@ -1,0 +1,21 @@
+# Mirrors monitoring/theme.py TOKENS — keep the two in sync. This block only
+# themes the widgets Streamlit paints before our stylesheet loads; everything
+# else reads the CSS custom properties emitted by theme.stylesheet().
+[theme]
+base = "dark"
+primaryColor = "#3B82F6"
+backgroundColor = "#08090A"
+secondaryBackgroundColor = "#0C0D0F"
+textColor = "#F5F6F7"
+borderColor = "#1E2024"
+baseRadius = "medium"
+
+[server]
+headless = true
+runOnSave = true
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

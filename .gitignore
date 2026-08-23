@@ -1,0 +1,41 @@
+# ---- secrets: never commit ----
+.env
+*.env
+!*.env.example
+**/.env
+credentials.json
+*.pem
+*.key
+
+# ---- virtualenvs / caches ----
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# ---- market data (reproducible: scripts/fetch_data.py) ----
+# Also keeps the sealed TEST split out of git: filesystem permissions on
+# research/data/test_locked/ do NOT survive a clone, so shipping it would
+# quietly undo the lock.
+research/data/
+research/live/market_cache/
+
+# ---- live runtime state (contains account identifiers) ----
+research/live/JOURNAL.jsonl
+research/live/HALT_LOG.jsonl
+research/live/HALT_STATE.json
+research/live/EMERGENCY_HALT.json
+research/live/RUNTIME_STATE.json
+research/live/live_returns.csv
+research/live/cron.log
+research/live/reports/
+research/backtest_results/
+regime-trader/backtest_results/
+
+# ---- os / editor cruft ----
+.DS_Store
+.playwright-mcp/
+.remember/
+*.log

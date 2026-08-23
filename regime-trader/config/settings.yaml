@@ -1,0 +1,99 @@
+# =============================================================================
+# regime-trader — master configuration
+# All tunable parameters live here, grouped by subsystem.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Broker / trading universe
+# -----------------------------------------------------------------------------
+broker:
+  paper_trading: true          # true = Alpaca paper endpoint; NEVER flip to false untested
+  symbols:                     # Trading universe
+    - SPY
+    - QQQ
+    - AAPL
+    - MSFT
+    - AMZN
+    - GOOGL
+    - NVDA
+    - META
+    - TSLA
+    - AMD
+  timeframe: 1Day              # Bar timeframe for signals (Alpaca notation)
+  cycle_seconds: 300           # Live loop: seconds between evaluation cycles
+
+# -----------------------------------------------------------------------------
+# HMM regime detection
+# -----------------------------------------------------------------------------
+hmm:
+  n_candidates: [3, 4, 5, 6, 7]  # Candidate state counts; best chosen by model selection (e.g. BIC)
+  n_init: 10                     # Random restarts per candidate to avoid local optima
+  covariance_type: full          # Gaussian emission covariance: full | diag | tied | spherical
+  min_train_bars: 504            # Minimum bars (2 trading years) required before fitting
+  retrain_interval_bars: 63      # Expanding-window retrain cadence (~quarterly)
+  stability_bars: 3              # Regime must persist this many bars before acting on it
+  flicker_window: 20             # Lookback window (bars) for flicker detection
+  flicker_threshold: 4           # Max regime switches allowed within flicker_window
+  min_confidence: 0.55           # Minimum posterior probability to trust the inferred regime
+
+# -----------------------------------------------------------------------------
+# Vol-regime allocation strategy
+# -----------------------------------------------------------------------------
+strategy:
+  low_vol_allocation: 0.95           # Target gross allocation in low-volatility regimes
+  mid_vol_allocation_no_trend: 0.60  # Mid-vol allocation when no trend confirmation
+  high_vol_allocation: 0.60          # Target allocation in high-volatility regimes
+  low_vol_leverage: 1.25             # Max leverage permitted in low-vol regimes
+  rebalance_threshold: 0.10          # Rebalance only when drift from target exceeds this fraction
+  uncertainty_size_mult: 0.50        # Position size multiplier when regime confidence is low
+
+# -----------------------------------------------------------------------------
+# Risk management
+# -----------------------------------------------------------------------------
+risk:
+  max_risk_per_trade: 0.01     # Max fraction of equity risked on a single trade
+  max_exposure: 0.80           # Max total gross exposure (fraction of equity)
+  max_leverage: 1.25           # Hard leverage cap, all regimes
+  max_single_position: 0.15    # Max fraction of equity in any one symbol
+  max_concurrent: 5            # Max simultaneous open positions
+  max_daily_trades: 20         # Daily trade count circuit breaker
+  daily_dd_reduce: 0.02        # Daily drawdown at which position sizes are reduced
+  daily_dd_halt: 0.03          # Daily drawdown at which new trading halts
+  weekly_dd_reduce: 0.05       # Weekly drawdown at which position sizes are reduced
+  weekly_dd_halt: 0.07         # Weekly drawdown at which new trading halts
+  max_dd_from_peak: 0.10       # Max drawdown from equity peak before full stop
+                               # (writes trading_halted.lock; delete to resume)
+  max_sector_exposure: 0.30    # Max fraction of equity in any one sector
+  min_position_value: 100      # Orders below this dollar value are rejected
+  gap_stop_multiple: 3.0       # Overnight gap assumed this many x through stop
+  gap_max_loss: 0.02           # Gap-through loss capped at this fraction of equity
+  max_spread_pct: 0.005        # Reject orders when bid-ask spread exceeds this
+  duplicate_window_seconds: 60 # Block same symbol+direction within this window
+  correlation_window: 60       # Rolling window (bars) for correlation checks
+  correlation_reduce: 0.70     # Correlation with held position: halve size
+  correlation_reject: 0.85     # Correlation with held position: reject trade
+  reduced_size_mult: 0.50      # Size multiplier while a reduce-breaker is active
+  leverage_max_positions: 3    # Force 1.0x leverage at this many open positions
+  leverage_flicker_threshold: 4  # Force 1.0x when regime flicker exceeds this
+
+# -----------------------------------------------------------------------------
+# Backtesting (walk-forward)
+# -----------------------------------------------------------------------------
+backtest:
+  slippage_pct: 0.0005         # Per-side slippage assumption (fraction of price)
+  initial_capital: 100000      # Starting equity in USD
+  train_window: 252            # Bars in each training window (~1 year)
+  test_window: 126             # Bars in each out-of-sample test window (~6 months)
+  step_size: 126               # Bars to roll forward between windows
+  risk_free_rate: 0.045        # Annualized risk-free rate for Sharpe et al.
+
+# -----------------------------------------------------------------------------
+# Monitoring / alerting
+# -----------------------------------------------------------------------------
+monitoring:
+  dashboard_refresh_seconds: 5   # Terminal dashboard refresh interval
+  alert_rate_limit_minutes: 15   # Min minutes between repeated alerts of the same kind
+  large_pnl_alert_pct: 0.02      # Alert when |daily P&L| exceeds this fraction
+  webhook_url: null              # Optional POST target for alert JSON payloads
+  email: null                    # Optional SMTP: {host, port, from, to, username,
+                                 #   use_tls}; put the password in the env, not here

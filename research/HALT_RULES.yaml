@@ -1,0 +1,130 @@
+# =====================================================================
+# HALT RULES — THE AUTHORITY FILE
+# =====================================================================
+# These thresholds are the ONLY thing that governs the kill switch.
+#
+# THE ONE RULE ABOUT THIS FILE:
+#   It changes only by Jainithin editing it, deliberately, when the market
+#   is closed and no decision is pending. Nothing in the codebase may write
+#   to this file. No script, no agent, no "temporary override", no argument
+#   flag. The daily checker opens it read-only and records its SHA-256 in
+#   the log every single day, so any edit is permanently visible in the
+#   audit trail alongside the date it took effect.
+#
+#   If you find yourself wanting to loosen a number while a position is
+#   open or a drawdown is running, that is precisely the moment the number
+#   exists to override you. Close the file.
+#
+# Created 2026-08-23. Calibrated from registered backtest variants
+# [0042], [0193], [0213]-[0224] in VARIANT_LEDGER.md.
+# =====================================================================
+
+meta:
+  owner: Jainithin
+  created: "2026-08-23"
+  # Bump this by hand when you edit thresholds; the log records both this
+  # and the file hash, so a silent edit is detectable either way.
+  revision: 2
+
+# ---------------------------------------------------------------------
+# RULE 1 — SKILL TEST: is the strategy beating random entries?
+# ---------------------------------------------------------------------
+# Each day we take the live return stream over a rolling window and compare
+# it against a Monte Carlo distribution of RANDOM-ENTRY strategies that are
+# matched to the live book on:
+#   - fraction of time in the market over that window
+#   - number of position switches over that window
+# ...applied to the SAME realized market returns. This isolates entry/exit
+# TIMING skill from simply having been invested.
+#
+# If live return falls below `percentile_floor` of that random distribution,
+# the timing has no demonstrable edge and new entries stop.
+skill_test:
+  enabled: true
+  # Rolling windows to evaluate, in trading days. A breach on ANY enabled
+  # window triggers. Short window catches fast decay; long window catches
+  # slow bleed.
+  windows: [63, 252]
+  # Live return must stay above this percentile of the random-entry
+  # distribution. 5.0 means: halt if we are in the worst 5% of what dart
+  # throwing would have produced. Raise to be stricter.
+  percentile_floor: 5.0
+  # Monte Carlo paths per window per day.
+  simulations: 2000
+  # Do not evaluate a window until this many live trading days exist.
+  # Prevents a noisy first month from halting a sound system.
+  min_live_days: 63
+  # --- POWER GUARDS (added rev 2, 2026-08-23, after a dry run on the
+  # --- 2001-2009 book produced a false HALT: live +17.38% vs random median
+  # --- +17.47% scored as the 0.0th percentile.)
+  #
+  # A near-always-invested book has almost no entry timing to evaluate, so
+  # every matched random path returns nearly the same number and the null
+  # collapses to a point mass. Then a 9bp shortfall looks like a 0th
+  # percentile catastrophe. Two guards stop that:
+  #
+  # 1. The null must actually spread out before its percentiles mean
+  #    anything. If the standard deviation of the random-entry distribution
+  #    is below this (as a fraction of the window return), the test has no
+  #    discriminating power and is reported INCONCLUSIVE, never HALT.
+  min_null_spread: 0.02
+  # 2. Being a hair below the random median is not evidence of decay. Live
+  #    must trail the random median by at least this much (absolute, over
+  #    the window) before a breach counts.
+  min_shortfall: 0.03
+  # Fixed seed: the same day's data must always give the same verdict.
+  # A test you can re-roll is not a test.
+  seed: 20260823
+
+# ---------------------------------------------------------------------
+# RULE 2 — DRAWDOWN TEST: has live gone meaningfully past backtest worst?
+# ---------------------------------------------------------------------
+# `worst_backtest_drawdown` is the deepest drawdown the deployed
+# configuration produced across ALL tested eras, as a positive fraction.
+# Live drawdown is measured from the live equity high-water mark.
+#
+# Honest note, kept here on purpose: a backtest's worst drawdown is a
+# sample minimum, not a bound. Live systems routinely print 1.3-1.5x their
+# backtest worst without being broken. The multipliers below are set with
+# that in mind - warn at parity, halt only once we are clearly outside the
+# envelope the research supports.
+drawdown_test:
+  enabled: true
+  # Deepest drawdown across all tested eras for the config being traded.
+  # Sources are named so the number is auditable, not folklore:
+  #   0.333  IDEA-109 unlevered risk-layer @0.75%/trade, 2001-2009 [0217]
+  #   0.575  IDEA-110 levered  risk-layer @0.75%/trade, 2001-2009 [0219]
+  #   0.497  IDEA-066 sector rotation, 2000-2009
+  #   0.548  IDEA-107 vol-targeted QQQ 20%/2x, 2000-2009
+  # Set this to match WHAT YOU ARE ACTUALLY TRADING. Default is the
+  # unlevered risk-layer book.
+  worst_backtest_drawdown: 0.333
+  # WARN (log + alert, keep trading) at this multiple of the above.
+  warn_multiple: 1.0
+  # HALT new entries at this multiple. 1.2 x 0.333 = 40.0% live drawdown.
+  halt_multiple: 1.2
+
+# ---------------------------------------------------------------------
+# WHAT A HALT DOES
+# ---------------------------------------------------------------------
+halt_behaviour:
+  # Block opening NEW positions. Existing positions are NOT force-liquidated;
+  # they follow their normal strategy exits. A kill switch that dumps the
+  # book at the worst tick is its own disaster.
+  block_new_entries: true
+  allow_existing_exits: true
+  # A halt NEVER clears itself. No cooldown, no auto-resume on recovery.
+  # Resuming requires a human writing the token below into
+  # live/HALT_STATE.json's "cleared_by" field, with a reason, while flat
+  # or deliberately choosing to continue. This is the mast you tie
+  # yourself to.
+  auto_resume: false
+  manual_resume_token: "I-REVIEWED-THE-HALT-AND-ACCEPT-THE-RISK"
+
+alerting:
+  # Console/log always. Additional channels are opt-in and must not be
+  # required for the halt to take effect - alerting failure must never
+  # silently disable the switch.
+  stdout: true
+  desktop_notification: true
+  email: ""     # leave blank to disable
