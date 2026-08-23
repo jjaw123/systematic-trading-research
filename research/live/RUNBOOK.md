@@ -5,7 +5,7 @@ independent checks (key prefix `PK`, `ALPACA_PAPER=true`, paper endpoint,
 account number `PA…`) must all pass before any order, and they re-run before
 every single submission — not just at startup.
 
-Account in use: **PA301ABR0908**, $100,000 paper.
+Account in use: the paper account configured in `.env` (account number is printed at connect time; not recorded here).
 
 ## Schedule
 Installed in cron, weekdays 16:30 ET:

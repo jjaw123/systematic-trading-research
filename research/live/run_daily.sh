@@ -5,8 +5,11 @@
 
 set -uo pipefail
 
-PROJECT="/Users/Jainithin/Documents/PersonalProjects/Trading Bot"
-PY="$PROJECT/regime-trader/.venv/bin/python"
+# Resolve the project root from this script's own location, so the file is
+# portable and contains no absolute home path.
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT="$(cd "$HERE/../.." && pwd)"
+PY="${TRADING_PY:-$PROJECT/regime-trader/.venv/bin/python}"
 RESEARCH="$PROJECT/research"
 LOG="$RESEARCH/live/cron.log"
 
