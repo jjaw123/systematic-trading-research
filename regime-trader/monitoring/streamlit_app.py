@@ -27,14 +27,15 @@ sys.path.insert(0, str(ROOT))
 
 from dotenv import load_dotenv                      # noqa: E402
 
-from monitoring import history, ui                  # noqa: E402
+from monitoring import history, strategies, ui      # noqa: E402
 from monitoring.theme import TOKENS, regime_color, stylesheet  # noqa: E402
 
 st.set_page_config(page_title="regime-trader", page_icon="◆",
                    layout="wide", initial_sidebar_state="expanded")
 st.markdown(stylesheet(), unsafe_allow_html=True)
 
-VIEWS = ["Overview", "Positions", "Signals", "Risk", "System"]
+VIEWS = ["Overview", "Strategies", "Positions", "Signals", "Risk",
+         "System"]
 
 
 def w(markup: str) -> None:
@@ -429,6 +430,16 @@ def render(view: str) -> None:
             positions_panel(client, snap)
         with b:
             signals_panel(snap)
+    elif view == "Strategies":
+        left, right = st.columns([3, 2])
+        with left:
+            w(strategies.book_panel())
+            w(strategies.rejected_panel())
+        with right:
+            w(strategies.expectation_panel())
+            w(strategies.ledger_panel())
+            w(strategies.shutoff_panel())
+        w(strategies.funnel_panel())
     elif view == "Positions":
         kpi_row(account, snap)
         positions_panel(client, snap)
