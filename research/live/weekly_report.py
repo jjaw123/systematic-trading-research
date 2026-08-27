@@ -88,6 +88,47 @@ def _reconcile(records, since):
     return kinds, crit
 
 
+def _attribution_section(A):
+    """Cumulative dollar P&L split between the book's two components.
+
+    Realized attribution (yesterday's position value x price move), so it
+    carries a residual for fees, slippage, execution timing and cash drift.
+    A large residual means the sleeve split for that period is not reliable.
+    """
+    from live.attribution import SLEEVES
+    from live.config import STRATEGY_RETURNS_PATH
+
+    if not STRATEGY_RETURNS_PATH.exists():
+        A("*No attribution rows yet — the first row is written after the "
+          "second live session.*")
+        return
+    df = pd.read_csv(STRATEGY_RETURNS_PATH)
+    if df.empty:
+        A("*No attribution rows yet.*")
+        return
+
+    by = df.groupby("sleeve")["pnl_dollars"].sum()
+    sleeve_total = sum(by.get(name, 0.0) for name in SLEEVES)
+    days = df["date"].nunique()
+
+    A(f"Over **{days} session{'s' if days != 1 else ''}**, cumulative P&L by "
+      f"component (realized attribution):")
+    A("")
+    A("| Component | Cumulative P&L | Share of attributed |")
+    A("|---|---|---|")
+    for name in SLEEVES:
+        pnl = by.get(name, 0.0)
+        share = (pnl / sleeve_total) if sleeve_total else float("nan")
+        share_s = f"{share:+.0%}" if sleeve_total else "n/a"
+        A(f"| {name} | ${pnl:+,.2f} | {share_s} |")
+    A(f"| _unattributed (fees/slippage/timing)_ | "
+      f"${by.get('unattributed', 0.0):+,.2f} | — |")
+    A("")
+    A(f"Attributed sleeve total: **${sleeve_total:+,.2f}**. "
+      f"Book equity change over the same rows: "
+      f"**${by.sum():+,.2f}** (sleeves + unattributed).")
+
+
 def build():
     REPORTS.mkdir(exist_ok=True)
     today = date.today()
@@ -214,6 +255,13 @@ def build():
         for c in crit[-10:]:
             A(f"- `{c['as_of']}` **{c['what']}**: {str(c.get('detail'))[:160]}")
     A("")
+
+    # ---- per-sleeve attribution ---------------------------------------------
+    A("## 5. Strategy attribution (since inception)")
+    A("")
+    _attribution_section(A)
+    A("")
+
     A("---")
     A(f"*Generated {datetime.now(timezone.utc).isoformat(timespec='seconds')}. "
       f"No real money is at risk; REAL_MONEY_ENABLED is False.*")

@@ -26,13 +26,15 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from live import journal  # noqa: E402
+from live import attribution, journal  # noqa: E402
 from live.broker import PaperBroker, trading_day  # noqa: E402
 from live.config import (  # noqa: E402
+    ATTRIBUTION_STATE_PATH,
     LIVE_RETURNS_PATH,
     MAX_DATA_STALENESS_DAYS,
     REFERENCE_SYMBOLS,
     RISK_PCT_PER_TRADE,
+    STRATEGY_RETURNS_PATH,
     TRADED_UNIVERSE,
     WARMUP_TRADING_DAYS,
 )
@@ -221,11 +223,36 @@ def main():
     gross = sum(abs(v) for v in positions.values()) / equity if equity else 0.0
     journal.snapshot(as_of, equity, {k: round(v, 2) for k, v in positions.items()},
                      gross, halted=not allow_entries, orders_submitted=orders_today)
-    write_runtime({**rt, "last_run": str(as_of), "last_equity": equity})
     _append_equity(as_of, equity, gross)
+    _attribute_day(as_of, equity, rt.get("last_equity"), bars, positions)
+    write_runtime({**rt, "last_run": str(as_of), "last_equity": equity})
     print(f"[{as_of}] equity ${equity:,.2f} | gross {gross:.1%} | "
           f"{orders_today} orders | entries {'BLOCKED' if not allow_entries else 'ok'}")
     return 0
+
+
+def _attribute_day(as_of, equity, last_equity, bars, positions):
+    """Split the day's P&L between the book's two components (realized, with a
+    residual) and append it to strategy_returns.csv.
+
+    Attribution is a report, never a control path: any failure is journalled
+    and swallowed so it cannot stop the loop or affect an order. The first run
+    just seeds state -- there is no prior day to diff against.
+    """
+    try:
+        cur_marks = {s: float(bars[s]["Close"].iloc[-1])
+                     for s in TRADED_UNIVERSE if s in bars}
+        prev = attribution.read_state(ATTRIBUTION_STATE_PATH)
+        if prev and str(prev.get("as_of")) < str(as_of) and last_equity:
+            result = attribution.attribute(
+                prev.get("values", {}), prev.get("marks", {}),
+                cur_marks, float(equity) - float(last_equity))
+            attribution.append_rows(STRATEGY_RETURNS_PATH, as_of, result)
+            journal.event(as_of, "attribution", result)
+        attribution.write_state(ATTRIBUTION_STATE_PATH, as_of, cur_marks, positions)
+    except Exception as ex:  # noqa: BLE001
+        journal.event(as_of, "attribution_failed", {"error": str(ex)},
+                      severity="warning")
 
 
 def _append_equity(as_of, equity, gross):

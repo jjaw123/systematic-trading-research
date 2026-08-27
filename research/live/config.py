@@ -54,6 +54,8 @@ LIVE_DIR = Path(__file__).resolve().parent
 MARKET_CACHE = LIVE_DIR / "market_cache"   # live bars; research NEVER reads this
 JOURNAL_PATH = LIVE_DIR / "JOURNAL.jsonl"
 LIVE_RETURNS_PATH = LIVE_DIR / "live_returns.csv"
+STRATEGY_RETURNS_PATH = LIVE_DIR / "strategy_returns.csv"   # per-sleeve P&L series
+ATTRIBUTION_STATE_PATH = LIVE_DIR / "attribution_state.json"  # prev marks/values
 
 
 class NotPaperAccount(RuntimeError):

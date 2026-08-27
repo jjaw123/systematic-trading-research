@@ -29,6 +29,8 @@ research/live/HALT_STATE.json
 research/live/EMERGENCY_HALT.json
 research/live/RUNTIME_STATE.json
 research/live/live_returns.csv
+research/live/strategy_returns.csv
+research/live/attribution_state.json
 research/live/cron.log
 research/live/launchd.out
 research/live/launchd.err
