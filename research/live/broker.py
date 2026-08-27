@@ -6,6 +6,7 @@ account. There is no live-trading code path in this module at all.
 """
 
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 from alpaca.data.historical import StockHistoricalDataClient
@@ -22,6 +23,19 @@ from .config import (
     assert_paper,
     load_credentials,
 )
+
+
+EXCHANGE_TZ = ZoneInfo("America/New_York")
+
+
+def trading_day():
+    """Today's date in EXCHANGE time.
+
+    The UTC date rolls over at 20:00 ET, so a UTC date would put an evening
+    run on the wrong side of the session boundary. Every "today" in the live
+    layer means the exchange's day, not the machine's.
+    """
+    return datetime.now(EXCHANGE_TZ).date()
 
 
 class PaperBroker:
@@ -107,24 +121,39 @@ class PaperBroker:
         notional is converted to WHOLE shares at the reference close and any
         fractional remainder is deliberately dropped as dust.
         """
-        acct = self.account()
-        assert_paper(self._key, self._paper_flag, self.base_url, account=acct)
         qty = int(abs(float(notional)) // float(ref_price))
         if qty < 1:
             journal.rejected(as_of, symbol,
                              f"rounds to 0 whole shares at ${ref_price:.2f} "
                              f"(notional ${abs(float(notional)):.2f})")
             return None
+        return self.submit_qty(symbol, qty, side, as_of, reason, ref_price)
+
+    def submit_qty(self, symbol, qty, side, as_of, reason, ref_price,
+                   tif="OPG", **journal_extra):
+        """Submit a whole-share market order with an explicit time-in-force.
+
+        TIF is a real risk decision, so it is never defaulted silently at the
+        call site: OPG is the book's normal path (fill in the opening auction,
+        matching the backtest), DAY is only used by the post-open
+        reconciliation when an OPG order expired unfilled in that auction.
+        """
+        acct = self.account()
+        assert_paper(self._key, self._paper_flag, self.base_url, account=acct)
+        qty = int(qty)
+        if qty < 1:
+            return None
+        tif_enum = {"OPG": TimeInForce.OPG, "DAY": TimeInForce.DAY}[tif]
         req = MarketOrderRequest(
             symbol=symbol,
             qty=qty,
             side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
-            time_in_force=TimeInForce.OPG)      # execute at the NEXT OPEN
+            time_in_force=tif_enum)
         o = self.trading.submit_order(req)
         journal.order(as_of, symbol, side, qty=qty,
                       notional=qty * float(ref_price), reason=reason,
-                      order_id=str(o.id), tif="OPG", ref_price=float(ref_price),
-                      account=self.account_number)
+                      order_id=str(o.id), tif=tif, ref_price=float(ref_price),
+                      account=self.account_number, **journal_extra)
         return o
 
     def close_all(self, as_of, reason):
@@ -157,6 +186,46 @@ class PaperBroker:
                 q = -q
             out[o.symbol] = out.get(o.symbol, 0.0) + q
         return out
+
+    def expired_today(self):
+        """OPG orders that died in TODAY's opening auction without filling.
+
+        `expired` is Alpaca's terminal state for an auction-only order that the
+        opening auction did not execute. It is not an error and carries no
+        reject reason - the order simply never traded, so the book is flat
+        where it intended to be long.
+        """
+        from alpaca.trading.enums import QueryOrderStatus
+        from alpaca.trading.requests import GetOrdersRequest
+        today = trading_day()
+        req = GetOrdersRequest(
+            status=QueryOrderStatus.CLOSED,
+            after=datetime.now(timezone.utc) - timedelta(days=2),
+            limit=200)
+        out = []
+        for o in self.trading.get_orders(req):
+            if str(getattr(o.status, "value", o.status)) != "expired":
+                continue
+            when = getattr(o, "expired_at", None) or getattr(o, "updated_at", None)
+            if when is None or when.astimezone(EXCHANGE_TZ).date() != today:
+                continue
+            out.append(o)
+        return out
+
+    def last_price(self, symbol, fallback=None):
+        """Latest trade price, falling back to the cached daily close."""
+        try:
+            from alpaca.data.requests import StockLatestTradeRequest
+            t = self.data.get_stock_latest_trade(
+                StockLatestTradeRequest(symbol_or_symbols=symbol))
+            return float(t[symbol].price)
+        except Exception:  # noqa: BLE001 - price staleness is handled by caller
+            if fallback is not None:
+                return float(fallback)
+            path = MARKET_CACHE / f"{symbol}.csv"
+            if path.exists():
+                return float(pd.read_csv(path, index_col=0)["Close"].iloc[-1])
+            raise
 
     def cancel_open_orders(self):
         self.trading.cancel_orders()

@@ -30,6 +30,8 @@ research/live/EMERGENCY_HALT.json
 research/live/RUNTIME_STATE.json
 research/live/live_returns.csv
 research/live/cron.log
+research/live/launchd.out
+research/live/launchd.err
 research/live/reports/
 research/backtest_results/
 regime-trader/backtest_results/

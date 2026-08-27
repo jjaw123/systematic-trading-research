@@ -20,7 +20,6 @@ string recorded alongside it.
 
 import sys
 import traceback
-from datetime import datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -28,7 +27,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from live import journal  # noqa: E402
-from live.broker import PaperBroker  # noqa: E402
+from live.broker import PaperBroker, trading_day  # noqa: E402
 from live.config import (  # noqa: E402
     LIVE_RETURNS_PATH,
     MAX_DATA_STALENESS_DAYS,
@@ -89,7 +88,10 @@ def emergency_active():
 
 
 def main():
-    as_of = datetime.now(timezone.utc).date()
+    # Exchange time, not UTC: the UTC date rolls at 20:00 ET, so an evening
+    # run would label itself with tomorrow's date and file its equity point on
+    # the wrong day.
+    as_of = trading_day()
     rt = read_runtime()
 
     blocked, why = emergency_active()
@@ -243,7 +245,7 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except Exception:  # noqa: BLE001
-        journal.event(datetime.now(timezone.utc).date(), "unhandled_exception",
+        journal.event(trading_day(), "unhandled_exception",
                       {"traceback": traceback.format_exc()}, severity="critical")
         traceback.print_exc()
         sys.exit(3)

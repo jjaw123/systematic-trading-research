@@ -212,3 +212,89 @@ def test_partially_filled_order_leaves_only_the_remainder_pending():
     o = FakeOrder("XLI", 138, "buy", 100)
     remaining = float(o.qty) - float(o.filled_qty)
     assert remaining == 38.0
+
+
+# ---- post-open reconciliation of expired OPG orders ------------------------
+#
+# Regression source: on 2026-08-24 every market-on-open order the book placed
+# (XLE 313, XLI 138, XLK 83, QQQ 30) was EXPIRED by Alpaca at 09:32-09:34 ET
+# with zero filled. OPG orders are auction-only; anything the opening auction
+# does not execute is killed rather than left resting, so the account stayed
+# flat all day while the strategy believed it held four positions.
+
+from live.reconcile_open import plan_replacements  # noqa: E402
+
+
+class ExpiredOrder:
+    def __init__(self, sym, qty, side="buy", filled=0, oid=None):
+        self.symbol, self.qty, self.filled_qty = sym, qty, filled
+        self.side = type("S", (), {"value": side})()
+        self.id = oid or f"id-{sym}"
+
+
+def test_expired_opg_orders_are_replaced_as_whole_shares():
+    plan = plan_replacements(
+        [ExpiredOrder("XLE", 313), ExpiredOrder("QQQ", 30)], set(), {})
+    assert [(r.symbol, r.side, r.qty) for r in plan] == \
+           [("XLE", "buy", 313), ("QQQ", "buy", 30)]
+    assert all("expired unfilled" in r.reason for r in plan)
+
+
+def test_replacement_never_happens_twice_for_the_same_order():
+    """Idempotency: a second run must be a no-op, not a doubled book."""
+    expired = [ExpiredOrder("XLK", 83, oid="abc")]
+    first = plan_replacements(expired, set(), {})
+    assert len(first) == 1
+    again = plan_replacements(expired, {"abc"}, {})
+    assert again == []
+
+
+def test_partial_fill_replaces_only_the_remainder():
+    plan = plan_replacements([ExpiredOrder("XLI", 138, filled=100)], set(), {})
+    assert (plan[0].symbol, plan[0].qty) == ("XLI", 38)
+
+
+def test_live_resting_order_already_covers_the_exposure():
+    """A resting order in the same direction is committed exposure already."""
+    assert plan_replacements([ExpiredOrder("XLE", 313)], set(), {"XLE": 313.0}) == []
+
+
+def test_partially_covered_expiry_replaces_only_the_gap():
+    plan = plan_replacements([ExpiredOrder("XLE", 313)], set(), {"XLE": 100.0})
+    assert (plan[0].symbol, plan[0].qty) == ("XLE", 213)
+
+
+def test_opposite_direction_resting_order_does_not_cover_a_buy():
+    """A resting SELL does not satisfy an expired BUY - netting it would flip
+    the book's direction rather than restore the intended position."""
+    plan = plan_replacements([ExpiredOrder("XLK", 83, "buy")], set(),
+                             {"XLK": -50.0})
+    assert (plan[0].side, plan[0].qty) == ("buy", 83)
+
+
+def test_expired_sells_are_replaced_as_sells():
+    plan = plan_replacements([ExpiredOrder("XLU", 40, "sell")], set(), {})
+    assert (plan[0].side, plan[0].qty) == ("sell", 40)
+
+
+def test_symbols_outside_the_universe_are_never_replaced():
+    """Tier-2 owns unknown symbols. This script must not trade them at all."""
+    assert plan_replacements([ExpiredOrder("NVDA", 1)], set(), {}) == []
+
+
+def test_fully_filled_order_needs_no_replacement():
+    assert plan_replacements([ExpiredOrder("QQQ", 30, filled=30)], set(), {}) == []
+
+
+def test_replacement_window_closes_an_hour_after_the_open():
+    """Under launchd a job missed while asleep runs on WAKE, so this script can
+    fire hours after the auction it exists to repair. Filling then is a
+    different trade at a different price."""
+    from datetime import datetime as dt
+
+    from live.reconcile_open import within_replacement_window
+    assert within_replacement_window(dt(2026, 8, 24, 9, 40))
+    assert within_replacement_window(dt(2026, 8, 24, 10, 30))   # edge of window
+    assert not within_replacement_window(dt(2026, 8, 24, 10, 31))
+    assert not within_replacement_window(dt(2026, 8, 24, 14, 0))
+    assert not within_replacement_window(dt(2026, 8, 24, 9, 29))  # pre-auction

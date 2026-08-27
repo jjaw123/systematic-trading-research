@@ -8,13 +8,27 @@ every single submission — not just at startup.
 Account in use: the paper account configured in `.env` (account number is printed at connect time; not recorded here).
 
 ## Schedule
-Installed in cron, weekdays 16:30 ET:
+Two **launchd** agents, weekdays (not cron — see below):
 
-    30 16 * * 1-5 research/live/run_daily.sh
+| Agent | When | Runs |
+|---|---|---|
+| `com.jainithin.tradingbot.daily` | 16:30 ET | `run_daily.sh` → `daily_loop.py`, plus `weekly_report.py` on Fridays |
+| `com.jainithin.tradingbot.reconcile` | 09:40 ET | `run_daily.sh reconcile` → `reconcile_open.py` |
 
-That runs `daily_loop.py` and, on Fridays, `weekly_report.py`. Output appends
-to `live/cron.log`. Exit codes: 0 ok · 2 tier-1 halt · 3 error · 4 tier-2
-emergency.
+Plists live in `~/Library/LaunchAgents/`. Inspect with
+`launchctl list | grep tradingbot`; force a run with
+`launchctl kickstart -w gui/$UID/com.jainithin.tradingbot.daily`; reload after
+editing a plist with `launchctl bootout` then `bootstrap gui/$UID <plist>`.
+
+**Why not cron:** cron silently SKIPS a job whose time passes while the Mac is
+asleep. That is exactly what happened on 2026-08-24 — the 16:30 run never
+fired and the book placed no orders at all that evening. launchd runs a missed
+`StartCalendarInterval` job when the machine wakes instead. That catch-up is
+also why `reconcile_open.py` refuses to act more than an hour after the open.
+
+Output appends to `live/cron.log` (launchd's own stdout/stderr go to
+`live/launchd.out` / `live/launchd.err`, and should stay empty). Exit codes:
+0 ok · 2 tier-1 halt · 3 error · 4 tier-2 emergency.
 
 ## What the loop does each evening
 1. connect + verify paper (×4)
@@ -26,6 +40,28 @@ emergency.
 6. diff vs positions **plus pending orders**, gate through hard limits
 7. submit market-on-open orders (whole shares, TIF=OPG) for the next session
 8. journal a snapshot, append to `live_returns.csv`
+
+## What the reconcile does each morning
+OPG orders are **auction-only**: whatever the opening auction does not execute,
+Alpaca marks `expired` a minute or two later — unfilled, not resting. On
+2026-08-24 all four of the book's orders expired that way at 09:32–09:34 ET
+and the account sat flat all day while the strategy believed it was invested.
+
+`reconcile_open.py` runs at 09:40 ET and repairs that:
+1. emergency halt active → do nothing at all
+2. market must be OPEN **and** it must still be within 60 minutes of the open
+   — a job that launchd deferred to 14:00 would be a different trade at a
+   different price, so it stands down and lets the nightly loop re-decide
+3. find orders that expired **today** (exchange time), subtract partial fills
+   and any live resting order in the same direction
+4. gate each remainder through the same hard limits and the same tier-1 entry
+   halt as any other order
+5. submit as a DAY market order, journalled with `replaces: <original id>`
+
+It is idempotent — an order id that already appears as `replaces` in the
+journal is never replaced twice, so running it repeatedly submits nothing
+extra. The cost is a few minutes of slippage versus the opening print on the
+days the auction fails.
 
 ## Hard limits (in code, `live/config.py` — not user-editable)
 25% max single position · 6 max open positions · 100% max gross ·
