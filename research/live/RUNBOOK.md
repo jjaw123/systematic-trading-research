@@ -12,13 +12,24 @@ Two **launchd** agents, weekdays (not cron — see below):
 
 | Agent | When | Runs |
 |---|---|---|
-| `com.jainithin.tradingbot.daily` | 16:30 ET | `run_daily.sh` → `daily_loop.py`, plus `weekly_report.py` on Fridays |
+| `com.jainithin.tradingbot.daily` | 19:30 ET | `run_daily.sh` → `daily_loop.py`, plus `weekly_report.py` on Fridays |
 | `com.jainithin.tradingbot.reconcile` | 09:40 ET | `run_daily.sh reconcile` → `reconcile_open.py` |
 
-Plists live in `~/Library/LaunchAgents/`. Inspect with
+The checked-in source of truth for both plists is `live/launchd/`; the loaded
+copies in `~/Library/LaunchAgents/` must match it. Inspect with
 `launchctl list | grep tradingbot`; force a run with
 `launchctl kickstart -w gui/$UID/com.jainithin.tradingbot.daily`; reload after
 editing a plist with `launchctl bootout` then `bootstrap gui/$UID <plist>`.
+
+**Why 19:30 ET, not just after the 16:00 close:** Alpaca only accepts OPG
+(opening-auction) orders between **19:00 and 09:28 ET**. The daily loop was
+first scheduled at 16:30; once the book was invested, every nightly rebalance
+was refused with `code 40310000` and the live book silently stopped tracking
+its targets (2026-08-25 through 08-27). The signal is computed from the day's
+close regardless of run time, so the later slot costs nothing. `submit_qty`
+now also turns that specific rejection into a journalled `rejected` with a
+"daily run is mistimed" reason instead of a raw API error, so a future drift
+is obvious in the journal.
 
 **Why not cron:** cron silently SKIPS a job whose time passes while the Mac is
 asleep. That is exactly what happened on 2026-08-24 — the 16:30 run never

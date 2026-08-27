@@ -298,3 +298,34 @@ def test_replacement_window_closes_an_hour_after_the_open():
     assert not within_replacement_window(dt(2026, 8, 24, 10, 31))
     assert not within_replacement_window(dt(2026, 8, 24, 14, 0))
     assert not within_replacement_window(dt(2026, 8, 24, 9, 29))  # pre-auction
+
+
+# ---- OPG submission-window rejection --------------------------------------
+#
+# Alpaca accepts OPG (opening-auction) orders only between 19:00 and 09:28 ET.
+# The daily loop was first scheduled at 16:30 ET, so once the book was
+# invested every nightly rebalance was refused with code 40310000 and the
+# live book silently stopped tracking its targets. That is a mistimed run,
+# not a broker fault: it must be recorded as a rejection, never escalated
+# toward the tier-2 circuit breaker, and never swallow an unrelated error.
+
+from live.broker import opg_window_rejection_reason  # noqa: E402
+
+
+def test_opg_window_rejection_recognised_by_alpaca_error_code():
+    exc = Exception('{"code":40310000,"message":"opg orders must be submitted '
+                    'after 7:00pm and before 9:28am"}')
+    reason = opg_window_rejection_reason(exc)
+    assert reason is not None and "after 19:00 ET" in reason
+
+
+def test_opg_window_rejection_recognised_by_message_text():
+    exc = Exception("opg orders must be submitted after 7:00pm and before 9:28am")
+    assert opg_window_rejection_reason(exc) is not None
+
+
+def test_unrelated_broker_errors_are_not_treated_as_opg_window():
+    assert opg_window_rejection_reason(
+        Exception('{"code":42210000,"message":"fractional orders must be DAY '
+                  'orders"}')) is None
+    assert opg_window_rejection_reason(Exception("connection reset by peer")) is None

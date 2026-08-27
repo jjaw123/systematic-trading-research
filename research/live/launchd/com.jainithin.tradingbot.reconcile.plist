@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Deployed copy of the post-open reconcile agent. The live file lives at
+  ~/Library/LaunchAgents/com.jainithin.tradingbot.reconcile.plist; this
+  checked-in copy is the source of truth.
+
+  Runs 09:40 ET, weekdays -- a few minutes after the open, inside the
+  60-minute window reconcile_open.py will act in. It replaces OPG orders the
+  opening auction expired unfilled with DAY market orders.
+
+  Reload after editing:
+    launchctl bootout   gui/$UID/com.jainithin.tradingbot.reconcile
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.jainithin.tradingbot.reconcile.plist
+-->
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>com.jainithin.tradingbot.reconcile</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/run_daily.sh</string>
+		<string>reconcile</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/launchd.err</string>
+	<key>StandardOutPath</key>
+	<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/launchd.out</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>40</integer>
+			<key>Weekday</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>40</integer>
+			<key>Weekday</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>40</integer>
+			<key>Weekday</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>40</integer>
+			<key>Weekday</key>
+			<integer>4</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>9</integer>
+			<key>Minute</key>
+			<integer>40</integer>
+			<key>Weekday</key>
+			<integer>5</integer>
+		</dict>
+	</array>
+</dict>
+</plist>

@@ -38,6 +38,26 @@ def trading_day():
     return datetime.now(EXCHANGE_TZ).date()
 
 
+OPG_WINDOW_ERROR_CODE = "40310000"
+
+
+def opg_window_rejection_reason(exc):
+    """A plain-English reason if `exc` is Alpaca refusing an OPG order for
+    being outside its submission window, else None.
+
+    Alpaca accepts OPG (opening-auction) orders only between 19:00 and 09:28
+    ET. Hitting this does not mean the broker is unhealthy -- it means the
+    nightly loop ran at the wrong time. So it is a rejection to record, not
+    an API error that should count toward the tier-2 circuit breaker.
+    """
+    text = str(exc)
+    if OPG_WINDOW_ERROR_CODE in text or "opg orders must be submitted" in text.lower():
+        return ("OPG submission window is closed (Alpaca accepts OPG orders "
+                "only 19:00-09:28 ET) -- the daily run is mistimed; it must be "
+                "scheduled after 19:00 ET")
+    return None
+
+
 class PaperBroker:
     def __init__(self, env_path=None):
         key, secret, paper_flag = load_credentials(env_path)
@@ -149,7 +169,15 @@ class PaperBroker:
             qty=qty,
             side=OrderSide.BUY if side == "buy" else OrderSide.SELL,
             time_in_force=tif_enum)
-        o = self.trading.submit_order(req)
+        try:
+            o = self.trading.submit_order(req)
+        except Exception as exc:  # noqa: BLE001
+            reason = opg_window_rejection_reason(exc)
+            if reason is None:
+                raise
+            journal.rejected(as_of, symbol, reason, wanted_qty=qty, tif=tif,
+                             **journal_extra)
+            return None
         journal.order(as_of, symbol, side, qty=qty,
                       notional=qty * float(ref_price), reason=reason,
                       order_id=str(o.id), tif=tif, ref_price=float(ref_price),

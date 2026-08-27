@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Deployed copy of the nightly close loop agent. The live file lives at
+  ~/Library/LaunchAgents/com.jainithin.tradingbot.daily.plist; this checked-in
+  copy is the source of truth so the schedule cannot silently drift again.
+
+  Runs 19:30 ET, weekdays. NOT 16:30: Alpaca only accepts OPG (opening-auction)
+  orders between 19:00 and 09:28 ET, so a 16:30 run cannot submit the book's
+  market-on-open orders at all -- every rebalance was refused with code
+  40310000 until this was moved. The signal is computed from the day's close
+  regardless of run time, so the later slot changes nothing about the strategy.
+
+  Paths are absolute (launchd does not expand ~ or shell vars in
+  ProgramArguments); adjust them if the checkout moves. Reload after editing:
+    launchctl bootout   gui/$UID/com.jainithin.tradingbot.daily
+    launchctl bootstrap gui/$UID ~/Library/LaunchAgents/com.jainithin.tradingbot.daily.plist
+-->
+<plist version="1.0">
+<dict>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/usr/bin:/bin:/usr/sbin:/sbin</string>
+	</dict>
+	<key>Label</key>
+	<string>com.jainithin.tradingbot.daily</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/run_daily.sh</string>
+	</array>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>StandardErrorPath</key>
+	<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/launchd.err</string>
+	<key>StandardOutPath</key>
+	<string>/Users/Jainithin/Documents/PersonalProjects/Trading Bot/research/live/launchd.out</string>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>19</integer>
+			<key>Minute</key>
+			<integer>30</integer>
+			<key>Weekday</key>
+			<integer>1</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>19</integer>
+			<key>Minute</key>
+			<integer>30</integer>
+			<key>Weekday</key>
+			<integer>2</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>19</integer>
+			<key>Minute</key>
+			<integer>30</integer>
+			<key>Weekday</key>
+			<integer>3</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>19</integer>
+			<key>Minute</key>
+			<integer>30</integer>
+			<key>Weekday</key>
+			<integer>4</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>19</integer>
+			<key>Minute</key>
+			<integer>30</integer>
+			<key>Weekday</key>
+			<integer>5</integer>
+		</dict>
+	</array>
+</dict>
+</plist>
