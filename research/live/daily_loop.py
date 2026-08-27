@@ -40,7 +40,7 @@ from live.config import (  # noqa: E402
 )
 from live.halt import entries_allowed, run_daily_check  # noqa: E402
 from live.limits import check_order, detect_emergency  # noqa: E402
-from live.state import bump_api_errors, read_runtime, reset_api_errors, write_runtime  # noqa: E402
+from live.state import bump_api_errors, read_runtime, reset_api_errors, update_runtime  # noqa: E402
 from strategies.risklayer import make  # noqa: E402
 
 EMERGENCY_STATE = Path(__file__).resolve().parent / "EMERGENCY_HALT.json"
@@ -225,7 +225,10 @@ def main():
                      gross, halted=not allow_entries, orders_submitted=orders_today)
     _append_equity(as_of, equity, gross)
     _attribute_day(as_of, equity, rt.get("last_equity"), bars, positions)
-    write_runtime({**rt, "last_run": str(as_of), "last_equity": equity})
+    # Merge, do NOT rebuild from `rt`: reset_api_errors() and any
+    # bump_api_errors() during this run have already written the file, and
+    # rebuilding from the copy read at the top would revert them.
+    update_runtime(last_run=str(as_of), last_equity=equity)
     print(f"[{as_of}] equity ${equity:,.2f} | gross {gross:.1%} | "
           f"{orders_today} orders | entries {'BLOCKED' if not allow_entries else 'ok'}")
     return 0
